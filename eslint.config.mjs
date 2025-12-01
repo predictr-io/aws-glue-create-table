@@ -12,6 +12,10 @@ export default [
         ecmaVersion: 2022,
         sourceType: 'module',
         project: './tsconfig.json'
+      },
+      globals: {
+        process: 'readonly',
+        setTimeout: 'readonly'
       }
     },
     plugins: {

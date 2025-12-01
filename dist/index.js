@@ -57072,6 +57072,44 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(7484));
 const client_glue_1 = __nccwpck_require__(6542);
 /**
+ * Wait for table to be available by polling GetTable
+ * @param glueClient - Glue client instance
+ * @param databaseName - Name of the database containing the table
+ * @param tableName - Name of the table to check
+ * @param catalogId - Optional catalog ID
+ * @param maxAttempts - Maximum number of polling attempts (default: 10)
+ * @param delayMs - Delay between attempts in milliseconds (default: 1000)
+ */
+async function waitForTable(glueClient, databaseName, tableName, catalogId, maxAttempts = 10, delayMs = 1000) {
+    core.info('Verifying table is available...');
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            await glueClient.send(new client_glue_1.GetTableCommand({
+                CatalogId: catalogId,
+                DatabaseName: databaseName,
+                Name: tableName,
+            }));
+            core.info(`✓ Table verified available after ${attempt} attempt(s)`);
+            return;
+        }
+        catch (error) {
+            if (error.name === 'EntityNotFoundException') {
+                if (attempt < maxAttempts) {
+                    core.info(`Table not yet available (attempt ${attempt}/${maxAttempts}), waiting ${delayMs}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                }
+                else {
+                    throw new Error(`Table ${databaseName}.${tableName} was created but failed to become available after ${maxAttempts} attempts`);
+                }
+            }
+            else {
+                // Unexpected error
+                throw error;
+            }
+        }
+    }
+}
+/**
  * Main action entry point
  * Creates or updates an AWS Glue Data Catalog table from JSON metadata
  */
@@ -57139,6 +57177,8 @@ async function run() {
                 TableInput: tableInput,
             }));
             core.info('Table created successfully');
+            // Wait for table to be available
+            await waitForTable(glueClient, databaseName, tableName, catalogId);
         }
         // Set outputs
         const tableArn = catalogId
