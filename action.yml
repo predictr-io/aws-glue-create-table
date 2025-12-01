@@ -1,0 +1,40 @@
+name: 'AWS Glue Create Table'
+description: 'Create or update AWS Glue Data Catalog tables with JSON metadata'
+author: 'predictr-io'
+
+branding:
+  icon: 'database'
+  color: 'orange'
+
+inputs:
+  # Required parameters
+  database-name:
+    description: 'Name of the Glue database'
+    required: true
+
+  table-name:
+    description: 'Name of the table to create or update'
+    required: true
+
+  table-input:
+    description: 'Table metadata as JSON string (TableInput object from Glue API)'
+    required: true
+
+  # Optional parameters
+  catalog-id:
+    description: 'AWS account ID for cross-account catalog access (defaults to current account)'
+    required: false
+
+outputs:
+  table-name:
+    description: 'Name of the created/updated table'
+
+  database-name:
+    description: 'Name of the database containing the table'
+
+  table-arn:
+    description: 'ARN of the created/updated table'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'
